@@ -1,5 +1,22 @@
-def bind_action_creator(action_creator, dispatch):
-	return lambda *args: dispatch(action_creator(*args))
+from functools import wraps
+
+
+def action_creator(dispatch):
+    """ Decorator which wraps an action creator with the dispatch callable
+    :param dispatch: the dispatch function for the redux store
+    :return: Decorator function
+    :rtype: Function
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapped(*positional, **named):
+            dispatch(func(*positional, **named))
+        return wrapped
+    return decorator
+
+
+def bind_action_creator(action_creator_fn, dispatch):
+	return lambda *positional, **named: dispatch(action_creator_fn(*positional, **named))
 	
 def bind_action_creators(action_creators=None, dispatch=None):
 	"""
@@ -25,12 +42,12 @@ def bind_action_creators(action_creators=None, dispatch=None):
 	"""
 	if hasattr(action_creators, '__call__'):
 		return bind_action_creator(action_creators, dispatch)
-	if type(action_creators) != dict or action_creators == None:
-		raise Exception('bind_action_creators expected an object or a function, instead received {}.'.format('None' if action_creators == None else type(action_creators)))
+	if type(action_creators) != dict or action_creators is None:
+		raise Exception('bind_action_creators expected an object or a function, instead received {}.'.format('None' if action_creators is None else type(action_creators)))
 	
 	bound_action_creators = {}
 	for key in action_creators:
-		action_creator = action_creators[key]
-		if hasattr(action_creator, '__call__'):
-			bound_action_creators[key] = bind_action_creator(action_creator, dispatch)
+		action_creator_fn = action_creators[key]
+		if hasattr(action_creator_fn, '__call__'):
+			bound_action_creators[key] = bind_action_creator(action_creator_fn, dispatch)
 	return bound_action_creators
